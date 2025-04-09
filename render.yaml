@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: push-booking
+    env: node
+    plan: free
+    buildCommand: npm install
+    startCommand: node index.js
+    envVars:
+      - key: AUTH_TOKEN
+        value: POKDF34FGV
+      - key: PROVIDER_CODE
+        value: pYDcVbgviAOyXjaXsarT
