@@ -1,7 +1,6 @@
 {
   "name": "push-booking",
   "version": "1.0.0",
-  "description": "Fetch and push hotel booking info",
   "main": "index.js",
   "scripts": {
     "start": "node index.js"
