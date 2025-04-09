@@ -36,8 +36,7 @@ app.get("/push-booking/:bookingId", async (req, res) => {
     const pmsUrl = "https://analysishms.com/eglobetohms/vAKdYUDIX6q4Q3jkw6Cq/booking";
     const pmsHeaders = {
       "Authorization": "Bearer POKDF34FGV",
-      "ProviderCode": "pYDcVbgviAOyXjaXsarT",
-      "Content-Type": "application/json"
+      "Providercode": "pYDcVbgviAOyXjaXsarT",
     };
 
     console.log("📡 Posting booking to PMS...");
