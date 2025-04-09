@@ -2,46 +2,58 @@ const express = require("express");
 const axios = require("axios");
 const app = express();
 
-const PORT = process.env.PORT || 3000;
+app.use(express.json());
 
-// Home route – helpful for testing if the server is live
 app.get("/", (req, res) => {
   res.send("🟢 Booking Push Server is Live!");
 });
 
 app.get("/push-booking/:bookingId", async (req, res) => {
-  const bookingId = req.params.bookingId;
+  const { bookingId } = req.params;
 
-  const fetchUrl = `https://www.eglobe-solutions.com/webapichannelmanager/bookings_v2/vAKdYUDIX6q4Q3jkw6Cq/`;
-
-  const fetchHeaders = {
-    Authorization: "Bearer POKDF34FGV",
-    Providercode: "pYDcVbgviAOyXjaXsarT"
-  };
+  if (!bookingId) {
+    return res.status(400).json({ error: "Booking ID is required." });
+  }
 
   try {
-    const fetchResponse = await axios.get(fetchUrl, { headers: fetchHeaders });
-    const bookingData = fetchResponse.data?.Result;
+    // Simulate fetched booking data
+    const bookingData = {
+      bookingId,
+      guestName: "John Doe",
+      checkInDate: "2025-04-10",
+      checkOutDate: "2025-04-12",
+      roomType: "Deluxe",
+      totalAmount: 2500,
+      email: "john@example.com",
+      phone: "9876543210"
+    };
 
-    if (!bookingData) {
-      return res.status(404).json({ error: "No booking data found." });
-    }
+    // Clean empty values
+    const cleanedData = Object.fromEntries(
+      Object.entries(bookingData).filter(([_, v]) => v != null && v !== "")
+    );
 
-    // Push to PMS
-    const pushUrl = `https://analysishms.com/eglobetohms/vAKdYUDIX6q4Q3jkw6Cq/booking`;
-    const pushResponse = await axios.post(pushUrl, bookingData);
+    const postUrl = "https://analysishms.com/eglobetohms/vAKdYUDIX6q4Q3jkw6Cq/booking";
+
+    const headers = {
+      "Authorization": "Bearer POKDF34FGV",
+      "ProviderCode": "pYDcVbgviAOyXjaXsarT",
+      "Content-Type": "application/json"
+    };
+
+    const response = await axios.post(postUrl, cleanedData, { headers });
 
     res.json({
-      message: "✅ Booking fetched & pushed successfully",
-      bookingId,
-      pmsResponse: pushResponse.data
+      message: "Booking pushed successfully ✅",
+      pmsResponse: response.data
     });
   } catch (error) {
-    console.error("❌ Error:", error.message);
-    res.status(500).json({ error: error.message });
+    console.error("❌ Error pushing booking:", error.message);
+    res.status(500).json({ error: "Failed to push booking", details: error.message });
   }
 });
 
+const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
+  console.log(`🚀 Server is running on port ${PORT}`);
 });
