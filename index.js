@@ -1,60 +1,47 @@
 const express = require("express");
-const fetch = require("node-fetch");
+const axios = require("axios");
 const app = express();
-app.use(express.json());
 
-const AUTH_TOKEN = "Bearer POKDF34FGV";
-const PROVIDER_CODE = "pYDcVbgviAOyXjaXsarT";
+const PORT = process.env.PORT || 3000;
+
+// Home route – helpful for testing if the server is live
+app.get("/", (req, res) => {
+  res.send("🟢 Booking Push Server is Live!");
+});
 
 app.get("/push-booking/:bookingId", async (req, res) => {
-  const { bookingId } = req.params;
-  console.log("📥 Booking ID received:", bookingId);
+  const bookingId = req.params.bookingId;
 
   const fetchUrl = `https://www.eglobe-solutions.com/webapichannelmanager/bookings_v2/vAKdYUDIX6q4Q3jkw6Cq/`;
 
-  try {
-    // 1. Fetch booking from eGlobe
-    const bookingRes = await fetch(fetchUrl, {
-      headers: {
-        Authorization: AUTH_TOKEN,
-        ProviderCode: PROVIDER_CODE,
-      },
-    });
+  const fetchHeaders = {
+    Authorization: "Bearer POKDF34FGV",
+    Providercode: "pYDcVbgviAOyXjaXsarT"
+  };
 
-    if (!bookingRes.ok) {
-      console.error("❌ Error fetching booking:", bookingRes.statusText);
-      return res.status(500).json({ error: "Failed to fetch booking data" });
+  try {
+    const fetchResponse = await axios.get(fetchUrl, { headers: fetchHeaders });
+    const bookingData = fetchResponse.data?.Result;
+
+    if (!bookingData) {
+      return res.status(404).json({ error: "No booking data found." });
     }
 
-    const bookingData = await bookingRes.json();
-    console.log("✅ Booking Data fetched");
-
+    // Push to PMS
     const pushUrl = `https://analysishms.com/eglobetohms/vAKdYUDIX6q4Q3jkw6Cq/booking`;
+    const pushResponse = await axios.post(pushUrl, bookingData);
 
-    // 2. Push to HMS
-    const hmsRes = await fetch(pushUrl, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(bookingData.Result),
+    res.json({
+      message: "✅ Booking fetched & pushed successfully",
+      bookingId,
+      pmsResponse: pushResponse.data
     });
-
-    const hmsResponseData = await hmsRes.text();
-    console.log("✅ Pushed to HMS");
-
-    res.status(200).send({
-      message: "Booking pushed successfully",
-      hmsResponse: hmsResponseData,
-    });
-
   } catch (error) {
-    console.error("❌ Server error:", error.message);
+    console.error("❌ Error:", error.message);
     res.status(500).json({ error: error.message });
   }
 });
 
-const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log("🚀 Server started on port", PORT);
+  console.log(`🚀 Server running on port ${PORT}`);
 });
